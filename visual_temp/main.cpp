@@ -17,10 +17,15 @@ int main(int argc, char* argv[])
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 
-    int width = 800;
-    int height = 600;
 
-    window = glfwCreateWindow(800, 400, "Simple example", NULL, NULL);
+    auto aspect_ratio = 16.0 / 9.0;
+    int width = 800;
+
+    // Calculate the image height, and ensure that it's at least 1.
+    int height = static_cast<int>(width / aspect_ratio);
+    height = (height < 1) ? 1 : height;
+
+    window = glfwCreateWindow(width, height, "temp", NULL, NULL);
     if (!window)
     {
         glfwTerminate();
@@ -35,6 +40,29 @@ int main(int argc, char* argv[])
         std::cout << "Failed to initialize GLAD" << std::endl;
         return -1;
     }
+
+
+
+
+    // Camera
+
+    float focal_length = 1.0;
+    float viewport_height = 2.0;
+    float viewport_width = viewport_height * (static_cast<double>(width) / height);
+    glm::vec3 camera_center = glm::vec3(0, 0, 0);
+
+    // Calculate the vectors across the horizontal and down the vertical viewport edges.
+    auto viewport_u = glm::vec3(viewport_width, 0, 0);
+    auto viewport_v = glm::vec3(0, -viewport_height, 0);
+
+    // Calculate the horizontal and vertical delta vectors from pixel to pixel.
+    glm::vec3 pixel_delta_u = viewport_u / float(width);
+    glm::vec3 pixel_delta_v = viewport_v / float(height);
+    // Calculate the location of the upper left pixel.
+    float scl = 2;
+    glm::vec3 viewport_upper_left = camera_center - glm::vec3(0, 0, focal_length) - viewport_u / scl - viewport_v / scl;
+    glm::vec3 pixel00_loc = viewport_upper_left + float(0.5) * (pixel_delta_u + pixel_delta_v);
+
 
 
     glm::vec3* pixels = new glm::vec3[width * height]();
@@ -53,6 +81,10 @@ int main(int argc, char* argv[])
     shapeShader->setInt("width", width);
     shapeShader->setInt("height", height);
 
+    //shapeShader->setVec3("pixel00_loc ", pixel00_loc);
+    //shapeShader->setVec3("pixel_delta_u ", pixel_delta_u);
+    //shapeShader->setVec3("pixel_delta_v ", pixel_delta_v);
+    //shapeShader->setVec3("camera_center", camera_center);
 
     std::string fragmentShaderPath = "../visual_temp/glsl/ray_tracing/fragment.glsl";
     Shader* fragmentShader = new Shader(GL_FRAGMENT_SHADER, fragmentShaderPath);

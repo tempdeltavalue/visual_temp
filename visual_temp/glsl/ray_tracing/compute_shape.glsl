@@ -5,12 +5,16 @@ layout( local_size_x = 64, local_size_y =1, local_size_z = 1  ) in;
 uniform int width;
 uniform int height;
 
+uniform vec3 pixel00_loc;
+uniform vec3 pixel_delta_u;
+uniform vec3 pixel_delta_v;
+uniform vec3 camera_center;
+
 
 layout(std430, binding=0) buffer pixelsBuffer
 {
     vec3 pixels[];
 };
-
 
 
 struct Ray {
@@ -23,14 +27,6 @@ Ray createRay(vec3 origin, vec3 direction) {
     ray.orig = origin;
     ray.dir = direction;
     return ray;
-}
-
-vec3 rayOrigin(Ray ray) {
-    return ray.orig;
-}
-
-vec3 rayDirection(Ray ray) {
-    return ray.dir;
 }
 
 vec3 rayAt(Ray ray, float t) {
@@ -54,31 +50,31 @@ bool hit_sphere(vec3 center, float radius, Ray r) {
 
 // Function to compute the ray color
 vec3 ray_color(Ray r) {
-    vec3 sphere_coords = vec3(0.5, 0.1, 0);
-    if (hit_sphere(sphere_coords, 0.2, r))
+    vec3 sphere_coords = vec3(0,0, -1);
+    if (hit_sphere(sphere_coords, 0.001, r))
         return vec3(1, 0, 0);
 
     vec3 unit_direction = unit_vector(r.dir);
+
+
     float a = 0.5 * (unit_direction.y + 1.0);
     vec3 white = vec3(1.0, 1.0, 1.0);
     vec3 blue = vec3(0.5, 0.7, 1.0);
-    return (1.0 - a) * white + a * blue;
+    vec3 temp = (1.0-a)*white + a*blue;
+
+    return vec3(r.dir.x / 255, r.dir.y / 255 ,0);
 }
 
 void main() {
     uint flattenedIndex = gl_GlobalInvocationID.x;
 
-    uint i = flattenedIndex / height;
-    uint j = flattenedIndex % height;
-    vec3 camera_center = vec3(0, 0, 0);
+    uint j = flattenedIndex / width;
+    uint i = flattenedIndex % width;
 
-    for (int i = 0; i < width; i++) {
-        for (int j = 0; j < height; j++) {
-            vec3 ray_direction = vec3(i, j, 0);
+    //vec3 pixel_center = vec3(i, j, 0); // pixel00_loc + (i * pixel_delta_u) + (j * pixel_delta_v);
+    //vec3 ray_direction = pixel_center - camera_center;
 
-            Ray r = createRay(camera_center, ray_direction);
 
-            pixels[flattenedIndex] = ray_color(r);
-        }
-    }
+    Ray r = createRay(vec3(0,0,0), vec3(i, j, 0));
+    pixels[flattenedIndex] = ray_color(r);
 }
