@@ -1,3 +1,0 @@
-﻿  main.cpp
-C:\Users\tempdelta\Desktop\visual_temp\visual_temp\main.cpp(100,31): warning C4244: 'argument': conversion from 'double' to 'GLuint', possible loss of data
-  visual_temp.vcxproj -> C:\Users\tempdelta\Desktop\visual_temp\x64\Debug\visual_temp.exe
