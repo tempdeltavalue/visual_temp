@@ -1,9 +1,28 @@
 #include <iostream>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+
 #include <glm.hpp>
+#include "gtx/string_cast.hpp"
+
 #include <vector>
 #include "common/shaders/Shader.h"
+
+float mouseX = 0.5;
+float mouseY = 0.5;
+
+
+void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
+{
+    if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS)
+    {
+        double xpos, ypos;
+        glfwGetCursorPos(window, &xpos, &ypos);
+        mouseX = xpos;
+        mouseY = ypos;
+        std::cout << "Cursor Position at (" << xpos << " : " << ypos << std::endl;
+    }
+}
 
 
 int main(int argc, char* argv[])
@@ -18,12 +37,14 @@ int main(int argc, char* argv[])
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 
 
-    auto aspect_ratio = 16.0 / 9.0;
+    float aspect_ratio = 16.0 / 9.0;
     int width = 800;
 
     // Calculate the image height, and ensure that it's at least 1.
     int height = static_cast<int>(width / aspect_ratio);
-    height = (height < 1) ? 1 : height;
+
+
+    //height = (height < 1) ? 1 : height;
 
     window = glfwCreateWindow(width, height, "temp", NULL, NULL);
     if (!window)
@@ -32,6 +53,7 @@ int main(int argc, char* argv[])
         exit(EXIT_FAILURE);
     }
 
+    glfwSetMouseButtonCallback(window, mouseButtonCallback);
 
     glfwMakeContextCurrent(window);
 
@@ -45,23 +67,7 @@ int main(int argc, char* argv[])
 
 
     // Camera
-
-    float focal_length = 1.0;
-    float viewport_height = 2.0;
-    float viewport_width = viewport_height * (static_cast<double>(width) / height);
-    glm::vec3 camera_center = glm::vec3(0, 0, 0);
-
-    // Calculate the vectors across the horizontal and down the vertical viewport edges.
-    auto viewport_u = glm::vec3(viewport_width, 0, 0);
-    auto viewport_v = glm::vec3(0, -viewport_height, 0);
-
-    // Calculate the horizontal and vertical delta vectors from pixel to pixel.
-    glm::vec3 pixel_delta_u = viewport_u / float(width);
-    glm::vec3 pixel_delta_v = viewport_v / float(height);
-    // Calculate the location of the upper left pixel.
-    float scl = 2;
-    glm::vec3 viewport_upper_left = camera_center - glm::vec3(0, 0, focal_length) - viewport_u / scl - viewport_v / scl;
-    glm::vec3 pixel00_loc = viewport_upper_left + float(0.5) * (pixel_delta_u + pixel_delta_v);
+    glm::vec3 camera_center = glm::vec3(0.5, 0.5, 0);
 
 
 
@@ -75,20 +81,19 @@ int main(int argc, char* argv[])
 
 
 
-    std::string shapeCalculatorPath = "../visual_temp/glsl/ray_tracing/compute_shape.glsl";
-    Shader* shapeShader = new Shader(GL_COMPUTE_SHADER, shapeCalculatorPath);
-    shapeShader->use();
-    shapeShader->setInt("width", width);
-    shapeShader->setInt("height", height);
+    //std::string shapeCalculatorPath = "../visual_temp/glsl/ray_tracing/compute_shape.glsl";
+    //Shader* shapeShader = new Shader(GL_COMPUTE_SHADER, shapeCalculatorPath);
+    //shapeShader->use();
+    //shapeShader->setInt("width", width);
+    //shapeShader->setInt("height", height);
 
-    //shapeShader->setVec3("pixel00_loc ", pixel00_loc);
-    //shapeShader->setVec3("pixel_delta_u ", pixel_delta_u);
-    //shapeShader->setVec3("pixel_delta_v ", pixel_delta_v);
-    //shapeShader->setVec3("camera_center", camera_center);
+
 
     std::string fragmentShaderPath = "../visual_temp/glsl/ray_tracing/fragment.glsl";
     Shader* fragmentShader = new Shader(GL_FRAGMENT_SHADER, fragmentShaderPath);
-
+    fragmentShader->setInt("height", height);
+    fragmentShader->setInt("width", width);
+    fragmentShader->setVec3("camera_center", camera_center);
 
 
     GLuint VAO;
@@ -127,13 +132,18 @@ int main(int argc, char* argv[])
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 
-        /// update particles positions (compute)
-        shapeShader->use();
-        glDispatchCompute(ceil(width * height / blockSize), 1, 1);
-        glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+        //shapeShader->use();
+
+        //glDispatchCompute(ceil(width * height / blockSize), 1, 1);
+        //glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 
 
         fragmentShader->use();
+        fragmentShader->setInt("height", height);
+        fragmentShader->setInt("width", width);
+        fragmentShader->setVec2("mousePos", glm::vec2(mouseX, mouseY));
+        fragmentShader->setVec3("camera_center", camera_center);
+
 
         glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 
