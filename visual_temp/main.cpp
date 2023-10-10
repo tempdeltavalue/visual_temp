@@ -8,6 +8,9 @@
 #include <vector>
 #include "common/shaders/Shader.h"
 
+#include <ctime>    
+
+
 float mouseX = 0.5;
 float mouseY = 0.5;
 
@@ -27,6 +30,13 @@ void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
 
 int main(int argc, char* argv[])
 {
+
+    time_t currentTime;
+    time(&currentTime);
+
+    // Convert it to a float
+    float currentTimeFloat = static_cast<float>(currentTime);
+    std::cout << "Current time (float): " << currentTimeFloat << " seconds since the epoch" << std::endl;
 
     GLFWwindow* window;
 
@@ -96,6 +106,8 @@ int main(int argc, char* argv[])
     fragmentShader->setVec3("camera_center", camera_center);
 
 
+
+
     GLuint VAO;
     GLuint VBO;
     glGenVertexArrays(1, &VAO);
@@ -144,7 +156,9 @@ int main(int argc, char* argv[])
         fragmentShader->setVec2("mousePos", glm::vec2(mouseX, mouseY));
         fragmentShader->setVec3("camera_center", camera_center);
 
+        fragmentShader->setFloat("current_time", currentTime);
 
+        
         glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 
         glfwSwapBuffers(window);
