@@ -57,25 +57,42 @@ vec3 inter_ray_color(Ray r, Sphere[2] t_list) {
         while (t_d > 0.0) {
             
             if (depth > 5) {
-                continue;
+                break;
             }
 
             vec3 p = rayAt(r, t_d); // intersection point 
 
-            vec3 N = (p - t_sphere.center)/t_sphere.radius;
+
+            vec3 N = (p - t_sphere.center)/t_sphere.radius; //vec3(mousePos.x /float(width) , mousePos.y /float(height), -1);
 
             final_color = 0.5*(N + vec3(1, 1, 1));
 
             float seed = current_time + float(depth) + i;
 
-            vec3 direction = random_on_hemisphere(N, seed);
-            final_color = direction;
+            vec3 direction = random_on_hemisphere(N, seed); 
+
+            //final_color = direction;
             //direction *= 1.1;
 
-            t_d = calculateSphere(p, direction, t_sphere.center, t_sphere.radius);
+            // what if ray bounced from sphere 1 and intersect with sphere two ?
+            //t_d = 0.0;
+
+    
+            for (int j = 0; j < 2; j++) {
+                if (i == j) { 
+                }
+                Sphere t_sphere2 = t_list[j];
+                t_d = calculateSphere(p, direction, t_sphere2.center, t_sphere2.radius);
+
+                if (t_d > 0.0) {
+                    coef *= 0.5;
+
+                    break;
+                }
+            }
+
 
             depth += 1;
-            coef *= 0.5;
         }
 
         if (final_color.x != -1.0 && final_color.y != -1.0 && final_color.z != -1.0) {
@@ -107,7 +124,7 @@ void main() {
 
 
 
-    vec3 temp_dir = vec3(x, y, -1) - camera_center; 
+    vec3 temp_dir = vec3(x, y, -1) - vec3(0.5 ,0.5,0); 
     Ray r = createRay(camera_center, temp_dir);
 
 
