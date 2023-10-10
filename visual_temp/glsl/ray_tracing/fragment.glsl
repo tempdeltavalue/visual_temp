@@ -1,5 +1,6 @@
 #version 430 core
 
+#include sphere_shader.incl
 
 out vec4 FragColor;
 
@@ -10,6 +11,7 @@ uniform int height;
 uniform vec3 camera_center;
 
 uniform vec2 mousePos;
+
 
 
 /// Ray struct
@@ -48,21 +50,17 @@ float distance(vec3 p1, vec3 p2) {
 }
 
 
-vec3 ray_color(Ray r) {
-    vec3 sphere_coords = vec3(0.5, 0.5, -1);
-    float radius = 0.1;
+vec3 ray_color(Ray r, float[2] t_list) {
 
-    vec3 oc = r.orig - sphere_coords;
-    float a = dot(r.dir, r.dir);
-    float b = 2.0 * dot(oc, r.dir);
-    float c = dot(oc, oc) - radius * radius;
-    float discriminant = b * b - 4.0 * a * c;
+    for (int i = 0; i < 2; i++) {
+        float t_d = t_list[i];
 
-    if (discriminant >= 0.0) {
-        float t = (-b - sqrt(discriminant) ) / (2.0*a);
-        vec3 N = unit_vector(rayAt(r, t) - vec3(mousePos.x /float(width) , mousePos.y /float(height) ,-1));
-        return 0.5*vec3(N.x+1, N.y+1, N.z+1);
+        if (t_d >= 0.0) {
+            vec3 N = unit_vector(rayAt(r, t_d) - vec3(mousePos.x /float(width) , mousePos.y /float(height) ,-1));
+            return 0.5*vec3(N.x+1, N.y+1, N.z+1);
+        }
     }
+
     
 
 
@@ -71,7 +69,7 @@ vec3 ray_color(Ray r) {
     float blend_a = 0.9 * (unit_direction.y + 1.0);
     vec3 white = vec3(1.0, 1.0, 1.0);
     vec3 blue = vec3(0.5, 0.2, 0.7);
-    vec3 background = (1.0-blend_a)*white + a*blue;
+    vec3 background = (1.0-blend_a)*white + blend_a*blue;
 
     return background;
 }
@@ -88,11 +86,23 @@ void main() {
     float y = (float(pixelCoords.y) / float(height) - (1.0 - aspect_ratio) / 2.0) / aspect_ratio;
 
 
-
-
-
     vec3 temp_dir = vec3(x, y, -1) - camera_center; 
 
+
+
     Ray r = createRay(camera_center, temp_dir);
-    FragColor = vec4(ray_color(r), 0);
+
+
+    vec3 sphere_coords = vec3(0.5, 0.5, -1);
+    float radius = 0.1;
+    float t_d = calculateSphere(r.orig, r.dir, sphere_coords, radius);
+
+    vec3 sphere_coords2 = vec3(0.2, 0.2, -3);
+    float radius2 = 0.1;
+    float t_d2 = calculateSphere(r.orig, r.dir, sphere_coords2, radius2);
+
+
+    float [2]t_list = {t_d, t_d2};
+
+    FragColor = vec4(ray_color(r, t_list), 0);
 }

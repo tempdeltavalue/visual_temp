@@ -4,11 +4,16 @@
 #include <sstream>
 #ifdef _WIN32
 #include <algorithm>
+#include "..\..\common\utils\Shadinclude.hpp"
+
 #endif
 
 Shader::Shader(GLuint shaderType, std::string& computeShaderPath) : Shader() {
     // Load vertex shader source code from file
-    std::string code = this->readFileToString(computeShaderPath);
+    // 
+    //std::string code = this->readFileToString(computeShaderPath);
+
+    std::string code = Shadinclude::load(computeShaderPath);
 
     // Compile shader
     unsigned int shader = compileShader(shaderType, code.c_str());
