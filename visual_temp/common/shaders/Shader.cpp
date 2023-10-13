@@ -8,7 +8,7 @@
 
 #endif
 
-Shader::Shader(GLuint shaderType, std::string& computeShaderPath) : Shader() {
+Shader::Shader(GLuint shaderType, std::string& computeShaderPath, unsigned int pID) : Shader() {
     // Load vertex shader source code from file
     // 
     //std::string code = this->readFileToString(computeShaderPath);
@@ -19,7 +19,13 @@ Shader::Shader(GLuint shaderType, std::string& computeShaderPath) : Shader() {
     unsigned int shader = compileShader(shaderType, code.c_str());
 
     // Create the shader program and attach shaders
-    this->ID = glCreateProgram();
+    if (pID == -1) {
+        this->ID = glCreateProgram();
+    }
+    else {
+        this->ID = pID;
+    }
+
     glAttachShader(this->ID, shader);
     glLinkProgram(this->ID);
     this->checkCompileErrors(this->ID, "PROGRAM");

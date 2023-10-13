@@ -17,7 +17,7 @@ public:
 
 
     Shader();
-    Shader(GLuint shaderType, std::string& computeShaderPath);
+    Shader(GLuint shaderType, std::string& computeShaderPath, unsigned int pID =-1);
 
     /**
      * Activates the shader

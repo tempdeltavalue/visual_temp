@@ -15,6 +15,18 @@ uniform vec2 mousePos;
 
 uniform float current_time;
 
+struct Triangle {
+    vec3 v1;
+    vec3 v2;
+    vec3 v3;
+
+};
+
+
+layout(std430, binding=3) buffer TrianglesBuffer {
+    Triangle triangles[];
+};
+
 
 /// Ray struct
 
@@ -116,6 +128,41 @@ vec3 inter_ray_color(Ray r, Sphere[2] t_list) {
 }
 
 
+
+bool rayTriangleIntersection(vec3 rayOrigin, vec3 rayDirection, vec3[3] triangleVertices) {
+    vec3 edge1 = triangleVertices[1] - triangleVertices[0];
+    vec3 edge2 = triangleVertices[2] - triangleVertices[0];
+    vec3 h = cross(rayDirection, edge2);
+    float a = dot(edge1, h);
+
+    if (a > -0.00001 && a < 0.00001) {
+        return false; // The ray is parallel to the triangle.
+    }
+
+    float f = 1.0 / a;
+    vec3 s = rayOrigin - triangleVertices[0];
+    float u = f * dot(s, h);
+
+    if (u < 0.0 || u > 1.0) {
+        return false;
+    }
+
+    vec3 q = cross(s, edge1);
+    float v = f * dot(rayDirection, q);
+
+    if (v < 0.0 || u + v > 1.0) {
+        return false;
+    }
+
+    float t = f * dot(edge2, q);
+
+    if (t > 0.00001) {
+        return true; // Intersection
+    }
+
+    return false;
+}
+
 void main() {
     ivec2 pixelCoords = ivec2(gl_FragCoord.xy);
     float aspect_ratio = float(width) / float(height);
@@ -139,4 +186,20 @@ void main() {
     Sphere [2]t_list = {Sphere(sphere_coords, radius), Sphere(sphere_coords2, radius2)}; //, 
 
     FragColor = vec4(inter_ray_color(r, t_list), 0);
+
+
+    FragColor = vec4(1, 0, 1, 1);
+
+    // in progress 
+    // 
+    //for (int i = 0; i < 44090; i++) {
+    //    Triangle tri = triangles[i];
+    //    vec3[3] temp = {tri.v1, tri.v2, tri.v3};
+
+    //    if (rayTriangleIntersection(r.orig, r.dir, temp)) {
+    //        FragColor = vec4(1, 0, 0, 0);
+    //        break;
+    //    }
+    //}
+
 }

@@ -11,6 +11,7 @@
 #include <vector>
 #include <iostream>
 
+#define STB_IMAGE_STATIC
 #define STB_IMAGE_IMPLEMENTATION 
 #include "utils/stb_image.h"
 
@@ -20,14 +21,19 @@ using namespace std;
 class Model
 {
 public:
-    vector<Texture> textures_loaded;	// stores all the textures loaded so far, optimization to make sure textures aren't loaded more than once.
+    vector<Mesh> meshes;
 
-    Model(string path)
+    vector<Texture> textures_loaded;	// stores all the textures loaded so far, optimization to make sure textures aren't loaded more than once.
+    int startVertexAttribOffset = 0;
+
+    Model(string path, int startVertexAttribOffset = 0)
     {
+        this->startVertexAttribOffset = startVertexAttribOffset;
+
         loadModel(path);
     }
 
-    void Draw(TShader& shader)
+    void Draw(Shader& shader)
     {
         for (unsigned int i = 0; i < meshes.size(); i++)
             meshes[i].Draw(shader);
@@ -35,7 +41,6 @@ public:
 
 private:
     // model data
-    vector<Mesh> meshes;
     string directory;
 
     void loadModel(string path)
@@ -57,6 +62,8 @@ private:
 
     void processNode(aiNode* node, const aiScene* scene)
     {
+        std::cout << "num of meshes " << node->mNumMeshes << std::endl;
+
         // process all the node's meshes (if any)
         for (unsigned int i = 0; i < node->mNumMeshes; i++)
         {
