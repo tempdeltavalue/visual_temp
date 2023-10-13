@@ -80,6 +80,7 @@ vec3 inter_ray_color(Ray r, Sphere[2] t_list) {
     
             for (int j = 0; j < 2; j++) {
                 if (i == j) { 
+                    continue;
                 }
                 Sphere t_sphere2 = t_list[j];
                 t_d = calculateSphere(p, direction, t_sphere2.center, t_sphere2.radius);
@@ -124,7 +125,7 @@ void main() {
 
 
 
-    vec3 temp_dir = vec3(x, y, -1) - vec3(0.5 ,0.5,0); 
+    vec3 temp_dir = vec3(x, y, -1) - camera_center; 
     Ray r = createRay(camera_center, temp_dir);
 
 

@@ -28,7 +28,7 @@ void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
 }
 
 
-int main(int argc, char* argv[])
+int main2(int argc, char* argv[])
 {
 
     time_t currentTime;
@@ -81,12 +81,12 @@ int main(int argc, char* argv[])
 
 
 
-    glm::vec3* pixels = new glm::vec3[width * height]();
-    int blockSize = 64;
-    GLuint pixels_SSBO;
-    glGenBuffers(1, &pixels_SSBO);
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, pixels_SSBO);
-    glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(glm::vec3) * width * height, pixels, GL_DYNAMIC_DRAW);
+    //glm::vec3* pixels = new glm::vec3[width * height]();
+    //int blockSize = 64;
+    //GLuint pixels_SSBO;
+    //glGenBuffers(1, &pixels_SSBO);
+    //glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, pixels_SSBO);
+    //glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(glm::vec3) * width * height, pixels, GL_DYNAMIC_DRAW);
 
 
 
