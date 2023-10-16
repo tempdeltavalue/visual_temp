@@ -155,8 +155,6 @@ private:
 
     vector<Texture> loadMaterialTextures(aiMaterial* mat, aiTextureType type, string typeName)
     {
-        std::cout << "load mat text method" << typeName << std::endl;
-
 
         vector<Texture> textures;
         for (unsigned int i = 0; i < mat->GetTextureCount(type); i++)
@@ -191,6 +189,7 @@ private:
 
     unsigned int TextureFromFile(const char* path, const string& directory, bool gamma)
     {
+
         string filename = string(path);
         filename = directory + '/' + filename;
 
