@@ -61,15 +61,27 @@ bool rayTriangleIntersect(
 float calculateSphere(vec3 orig, vec3 dir, vec3 sphere_coords, float radius) {
     vec3 oc = orig - sphere_coords;
     float a = dot(dir, dir);
-    float b = 2.0 * dot(oc, dir);
+    float half_b = dot(oc, dir);
     float c = dot(oc, oc) - radius * radius;
-    float discriminant = b * b - 4.0 * a * c;
+    float discriminant = half_b * half_b - a * c;
        
-    if (discriminant >= 0.0) {
-        float t = (-b - sqrt(discriminant) ) / (2.0*a);
-        return t;
+    if (discriminant <= 0.0) {
+        return -1;
     }
 
-    return discriminant;
+    float sqrt_d = sqrt(discriminant);
+    float root = (-half_b - sqrt_d) / a;
+
+    //float ray_tmin = -0.001;
+    //float ray_tmax = 1;
+
+    //if (root <= ray_tmin || ray_tmax <= root) {
+    //    root = (-half_b + sqrt_d) / a;
+    //    if (root <= ray_tmin || ray_tmax <= root)
+    //        return -1;
+    //}
+
+
+    return root;
     
 }

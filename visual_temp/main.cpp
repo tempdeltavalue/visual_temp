@@ -131,38 +131,38 @@ int main(int argc, char* argv[])
     glEnableVertexAttribArray(0);
 
 
-    Model ourModel("../visual_temp/models/space_rocket/space_rocket.obj", 1);
+    //Model ourModel("../visual_temp/models/space_rocket/space_rocket.obj", 1);
 
-    Mesh calcMesh = ourModel.meshes[0];
-    vector<Vertex> vertices = calcMesh.vertices;
-    vector<unsigned int> indices = calcMesh.indices;
+    //Mesh calcMesh = ourModel.meshes[0];
+    //vector<Vertex> vertices = calcMesh.vertices;
+    //vector<unsigned int> indices = calcMesh.indices;
 
-    std::vector<Triangle> triangles;
+    //std::vector<Triangle> triangles;
 
 
-    float translateX = 10.f; // Adjust as needed
-    float translateY = 5.f; // Adjust as needed
-    float scale = 0.1f; // Adjust as needed
+    //float translateX = 10.f; // Adjust as needed
+    //float translateY = 5.f; // Adjust as needed
+    //float scale = 0.1f; // Adjust as needed
 
     // 
-    for (size_t i = 0; i < indices.size(); i += 3) {
+    //for (size_t i = 0; i < indices.size(); i += 3) {
 
-        glm::vec4 v1 = glm::vec4(vertices[indices[i]].Position, 0);
-        glm::vec4 v2 = glm::vec4(vertices[indices[i + 1]].Position, 0);
-        glm::vec4 v3 = glm::vec4(vertices[indices[i + 2]].Position, 0);
+    //    glm::vec4 v1 = glm::vec4(vertices[indices[i]].Position, 0);
+    //    glm::vec4 v2 = glm::vec4(vertices[indices[i + 1]].Position, 0);
+    //    glm::vec4 v3 = glm::vec4(vertices[indices[i + 2]].Position, 0);
 
-        v1 = (v1 + glm::vec4(translateX, translateY, 0.0f, 0)) * scale;
-        v2 = (v2 + glm::vec4(translateX, translateY, 0.0f, 0)) * scale;
-        v3 = (v3 + glm::vec4(translateX, translateY, 0.0f, 0)) * scale;
+    //    v1 = (v1 + glm::vec4(translateX, translateY, 0.0f, 0)) * scale;
+    //    v2 = (v2 + glm::vec4(translateX, translateY, 0.0f, 0)) * scale;
+    //    v3 = (v3 + glm::vec4(translateX, translateY, 0.0f, 0)) * scale;
 
 
-        v1.z -= 2;
-        v2.z -= 2;
-        v3.z -= 2;
+    //    v1.z -= 2;
+    //    v2.z -= 2;
+    //    v3.z -= 2;
 
-        Triangle triangle = { v1, v2, v3 , glm::vec4(vertices[indices[i]].TexCoords, 0, 0) };
-        triangles.push_back(triangle);
-    }
+    //    Triangle triangle = { v1, v2, v3 , glm::vec4(vertices[indices[i]].TexCoords, 0, 0) };
+    //    triangles.push_back(triangle);
+    //}
 
 
 
@@ -172,15 +172,14 @@ int main(int argc, char* argv[])
     fragmentShader.setInt("height", height);
     fragmentShader.setInt("width", width);
     fragmentShader.setVec3("camera_center", camera_center);
-    fragmentShader.setInt("triangles_len", triangles.size());
+    //fragmentShader.setInt("triangles_len", triangles.size());
 
-    GLuint pixels_SSBO;
-    glGenBuffers(1, &pixels_SSBO);
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, pixels_SSBO);
-    glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(Triangle) * triangles.size(), &triangles[0], GL_DYNAMIC_DRAW);
+    //GLuint pixels_SSBO;
+    //glGenBuffers(1, &pixels_SSBO);
+    //glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, pixels_SSBO);
+    //glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(Triangle) * triangles.size(), &triangles[0], GL_DYNAMIC_DRAW);
 
-
-    std::cout << "HERE " << ourModel.textures_loaded.size() << std::endl;
+    //std::cout << "HERE " << ourModel.textures_loaded.size() << std::endl;
 
     while (!glfwWindowShouldClose(window))
     {
@@ -204,15 +203,15 @@ int main(int argc, char* argv[])
         fragmentShader.setVec2("mousePos", glm::vec2(mouseX, mouseY));
         fragmentShader.setVec3("camera_center", camera_center);
         fragmentShader.setFloat("current_time", currentTime);
-        fragmentShader.setInt("triangles_len", triangles.size());
+        //fragmentShader.setInt("triangles_len", triangles.size());
 
 
-        glActiveTexture(GL_TEXTURE0); // activate proper texture unit before binding
-        // retrieve texture number (the N in diffuse_textureN)
+        //glActiveTexture(GL_TEXTURE0); // activate proper texture unit before binding
+        //// retrieve texture number (the N in diffuse_textureN)
 
-        fragmentShader.setInt("texture_diffuse1", 0);
-        glBindTexture(GL_TEXTURE_2D, ourModel.textures_loaded[0].id);
-        glActiveTexture(GL_TEXTURE0);
+        //fragmentShader.setInt("texture_diffuse1", 0);
+        //glBindTexture(GL_TEXTURE_2D, ourModel.textures_loaded[0].id);
+        //glActiveTexture(GL_TEXTURE0);
 
 
         
