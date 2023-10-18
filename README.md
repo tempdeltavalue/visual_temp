@@ -1,7 +1,7 @@
 # visual_temp
 ray tracing, opengl, glsl
 
-![Screenshot 2023-10-11 001344](https://github.com/tempdeltavalue/visual_temp/assets/36921178/2b148aee-0b7d-4207-a3c5-009f4d0c19e4)
+![Screenshot 2023-10-16 161244](https://github.com/tempdeltavalue/visual_temp/assets/36921178/9a742a55-6d8e-4cd8-87ad-8487fbf78856)
 
 
 ![temp2](https://github.com/tempdeltavalue/visual_temp/assets/36921178/5d531d6e-3c04-4c62-96ab-3557661ff0ff)
