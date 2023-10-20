@@ -41,29 +41,20 @@ vec3 rand_vec3(vec2 seed) {
     return vec3(randX, randY, randZ);
 }
 
-vec3 random_on_unit_sphere(vec2 seed) {
 
+vec3 random_on_unit_sphere(vec2 seed) {
     float theta = rand(seed) * 2.0 * 3.14159265359; // Random angle between 0 and 2*pi
-    float phi = rand(seed) * 3.14159265359; // Random angle between -pi/2 and pi/2
+    float phi = rand(seed) * 2.0 * 3.14159265359; // Random angle between 0 and 2*pi
 
     float x = cos(theta) * cos(phi);
     float y = sin(phi);
     float z = sin(theta) * cos(phi);
 
     return vec3(x, y, z);
-
-    //while (true) {
-    //    vec3 rand_vec = rand_vec3(seed);
-
-    //    if (dot(rand_vec, rand_vec) < 1)
-    //        return rand_vec;
-
-    //    seed += 10.0;
-    //}
 }
 
 vec3 random_unit_vector(vec2 seed) {
-    return random_on_unit_sphere(seed);
+    return unit_vector(random_on_unit_sphere(seed));
 }
 
 vec3 random_on_hemisphere(vec3 normal, vec2 seed) {

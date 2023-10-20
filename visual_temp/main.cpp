@@ -44,15 +44,6 @@ void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
     }
 }
 
-float length_squared(glm::vec3 v) {
-    return v.x * v.x + v.y * v.y + v.z * v.z;
-}
-
-
-glm::vec3 unit_vector(glm::vec3 v) {
-    float length = sqrt(length_squared(v));
-    return glm::vec3(v.x / length, v.y / length, v.z / length);
-}
 
 int main(int argc, char* argv[])
 {
@@ -73,8 +64,8 @@ int main(int argc, char* argv[])
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 
 
-    float aspect_ratio = 16.0 / 9.0;
-    int width = 800;
+    float aspect_ratio = 16.0 / 16.0;
+    int width = 1200;
 
     // Calculate the image height, and ensure that it's at least 1.
     int height = static_cast<int>(width / aspect_ratio);

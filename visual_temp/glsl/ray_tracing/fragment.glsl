@@ -27,7 +27,7 @@ struct Triangle {
 };
 
 
-layout(std430, binding=3) buffer TrianglesBuffer {
+layout(std430, binding = 3) buffer TrianglesBuffer {
     Triangle triangles[];
 };
 
@@ -42,7 +42,10 @@ struct Ray {
 
 struct Sphere {
     vec3 center;
+    vec3 color;
+    vec3 albedo;
     float radius;
+    bool is_reflect;
 };
 
 Ray createRay(vec3 origin, vec3 direction) {
@@ -60,19 +63,34 @@ vec3 rayAt(Ray ray, float t) {
 // GLSL doesn't support recursion 
 
 
-vec3 inter_ray_color(Ray r, Sphere[2] t_list, float upper_seed) {
-    vec3 final_color = vec3(0, 0, 0); // null
+vec3 inter_ray_color(Ray r, Sphere[4] t_list, int upper_seed) {
+    vec3 attenuation = vec3(0, 0, 0);
 
-    for (int i = 0; i < 2; i++) {
+    int first_sphere_i = -1;
+
+    int depth = 0;
+    int max_depth = 10;
+    float t_d = 0;
+
+
+    for (int i = 0; i < 4; i++) {
+        if (depth > max_depth) {
+            break;
+        }
+
         Sphere t_sphere = t_list[i];
-        float t_d = calculateSphere(r.orig, r.dir, t_sphere.center, t_sphere.radius);
 
-        int depth = 0;
+
+        t_d = calculateSphere(r.orig, r.dir, t_sphere.center, t_sphere.radius);
+
 
         while (t_d > 0.0) {
-
-            if (depth > 3) {
+            if (depth > max_depth) {
                 break;
+            }
+
+            if (first_sphere_i == -1) {
+                first_sphere_i = i;
             }
 
             depth += 1;
@@ -82,32 +100,56 @@ vec3 inter_ray_color(Ray r, Sphere[2] t_list, float upper_seed) {
 
             vec3 N = (p - t_sphere.center) / t_sphere.radius;
 
-            vec3 current_r_color = 0.5 * (N + vec3(1, 1, 1));
+            vec3 direction;
+            vec2 seed = gl_FragCoord.xy + p.y + N.xy + float(upper_seed + depth + i);
+            //seed = (normalize(seed) * 2.0 - 1.0) * 0.5; // This transforms fragPos to range from -0.5 to 0.5.
 
-            final_color = (0.5 / depth) * current_r_color;
+            if (t_sphere.is_reflect) {
+                direction = reflect(unit_vector(r.dir), N);
+            }
+            else {
 
-      
-            final_color /= depth; // <-??
+                direction = N + random_on_unit_sphere(seed);
 
-            vec2 seed = gl_FragCoord.xy + gl_FragCoord.yx + 1 + upper_seed + depth;
-
-            vec3 direction = random_on_hemisphere(N, seed); // N + random_unit_vector(seed); //
-            //final_color = direction;
+            }
 
 
-            //t_d = 0;
-            for (int j = 0; j < 2; j++) {
-                if (i == j) {
-                    continue;
-                }
+            if (dot(random_on_unit_sphere(seed), N) > 0.0) // In the same hemisphere as the normal
+                attenuation = vec3(1, 0, 0);
+            else
+                attenuation = vec3(1, 1, 0);
+
+            if (i == 1) {
+                attenuation = N + random_on_unit_sphere(seed);
+            }
+            //attenuation = t_sphere.color;
+   
+
+            t_d = 0;
+
+            for (int j = 0; j < 4; j++) {
 
                 t_sphere = t_list[j];
                 t_d = calculateSphere(p, direction, t_sphere.center, t_sphere.radius);
-                r = createRay(p, direction);
+                if (t_d > 0) {
+                    r = createRay(p, direction);
+                    break;
+                }
             }
         }
+
     }
 
+    vec3 final_color = vec3(0, 0, 0);
+    if (attenuation.x != 0) {
+        //final_color = ( t_list[first_sphere_i].color * (1-t_list[first_sphere_i].albedo)  +  attenuation * (t_list[first_sphere_i].albedo)) / depth;
+        final_color = attenuation / depth;
+
+    }
+
+    //if (final_color.x != 0) {
+    //    final_color /= max_depth;
+    //}
 
     /// figure trace //
     //if (final_color.x == -1.0) {
@@ -131,7 +173,7 @@ vec3 inter_ray_color(Ray r, Sphere[2] t_list, float upper_seed) {
         float blend_a = 0.9 * (unit_direction.y + 1.0);
         vec3 white = vec3(1.0, 1.0, 1.0);
         vec3 blue = vec3(0.2, 0.2, 0.7);
-        final_color= (1.0-blend_a)*white + blend_a*blue;
+        final_color = (1.0 - blend_a) * white + blend_a * blue;
     }
 
     return final_color;
@@ -146,21 +188,24 @@ void main() {
     float x = float(pixelCoords.x) / float(width);
     float y = (float(pixelCoords.y) / float(height) - (1.0 - aspect_ratio) / 2.0) / aspect_ratio;
 
+    float small_radius = 0.1;
+    Sphere sphere1 = Sphere(vec3(0.5, 0.52, -0.8), vec3(0.5, 0.5, 0.2), vec3(0.9, 0.9, 0.9), small_radius, true);
+    Sphere sphere2 = Sphere(vec3(0.7, 0.58, -0.8), vec3(0.9, 0.2, 0.3), vec3(0.2, 0.2, 0.2), 0.05, true);
 
-    vec3 sphere_coords = vec3(0.5, 0.5, -0.8);
-    float radius = 0.1;
+    Sphere sphere3 = Sphere(vec3(0.28, 0.47, -0.8), vec3(0.5, 0.2, 0.7), vec3(0.2, 0.2, 0.2), small_radius, false);
 
-    float radius2 =100;
-    vec3 sphere_coords2 = vec3(0.5, 0.5 - radius2 - radius - 0.03, -1);
+    float surface_radius = 10000;
+    Sphere sphere4 = Sphere(vec3(0.5, 0.5 - surface_radius - small_radius - 0.03, -1), vec3(0.2, 0.7, 0.3), vec3(0.2, 0.2, 0.2), surface_radius, false);
 
-    Sphere [2]t_list = {Sphere(sphere_coords, radius), Sphere(sphere_coords2, radius2)}; //, 
+
+    Sphere[4]t_list = { sphere1, sphere2, sphere3, sphere4 }; //, 
 
 
 
     vec3 temp_dir = vec3(x, y, -1) - camera_center;
 
 
-    int samples_per_pixel = 200;
+    int samples_per_pixel = 300;
     float sample_side = 0.001;
 
     vec4 sampled_color;
@@ -168,7 +213,7 @@ void main() {
     for (int i = 0; i < samples_per_pixel; i++) {
         float rand_dir = sample_side * (2 * rand(gl_FragCoord.xy + i) - 1);
 
-        
+
         vec3 sampled_dir = temp_dir + rand_dir;
 
         Ray r = createRay(camera_center, sampled_dir);
@@ -177,5 +222,8 @@ void main() {
     }
 
 
-    FragColor = sampled_color/ samples_per_pixel;  
+    float gamma = 1.5;
+    FragColor = sampled_color / samples_per_pixel * gamma;
+
+
 }
