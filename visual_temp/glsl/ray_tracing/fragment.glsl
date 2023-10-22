@@ -63,18 +63,19 @@ vec3 rayAt(Ray ray, float t) {
 // GLSL doesn't support recursion 
 
 
-vec3 inter_ray_color(Ray r, Sphere[4] t_list, int upper_seed) {
+vec3 inter_ray_color(Ray r, Sphere[4] t_list, float upper_seed) {
+    int spheres_len = 4;
     vec3 attenuation = vec3(0, 0, 0);
 
     int first_sphere_i = -1;
 
     int depth = 0;
-    int max_depth = 10;
+    int max_depth = 40;
     float t_d = 0;
+    bool is_hit = false;
 
-
-    for (int i = 0; i < 4; i++) {
-        if (depth > max_depth) {
+    for (int i = 0; i < spheres_len; i++) {
+        if (depth > max_depth || is_hit) {
             break;
         }
 
@@ -85,6 +86,8 @@ vec3 inter_ray_color(Ray r, Sphere[4] t_list, int upper_seed) {
 
 
         while (t_d > 0.0) {
+            depth += 1;
+
             if (depth > max_depth) {
                 break;
             }
@@ -93,42 +96,37 @@ vec3 inter_ray_color(Ray r, Sphere[4] t_list, int upper_seed) {
                 first_sphere_i = i;
             }
 
-            depth += 1;
+            is_hit = true;
 
             vec3 p = rayAt(r, t_d);
 
 
             vec3 N = (p - t_sphere.center) / t_sphere.radius;
 
+
+            vec2 seed = vec2(upper_seed, upper_seed + 1.);
             vec3 direction;
-            vec2 seed = gl_FragCoord.xy + p.y + N.xy + float(upper_seed + depth + i);
-            //seed = (normalize(seed) * 2.0 - 1.0) * 0.5; // This transforms fragPos to range from -0.5 to 0.5.
 
             if (t_sphere.is_reflect) {
                 direction = reflect(unit_vector(r.dir), N);
             }
             else {
+                vec3 rand_c = random_on_unit_sphere(seed);
 
-                direction = N + random_on_unit_sphere(seed);
+                if (rand_c.z < 0) {
+                    rand_c.z *= -1;
+                }
+
+                direction = N + rand_c;
+                attenuation = t_sphere.color;
 
             }
 
 
-            if (dot(random_on_unit_sphere(seed), N) > 0.0) // In the same hemisphere as the normal
-                attenuation = vec3(1, 0, 0);
-            else
-                attenuation = vec3(1, 1, 0);
-
-            if (i == 1) {
-                attenuation = N + random_on_unit_sphere(seed);
-            }
-            //attenuation = t_sphere.color;
-   
 
             t_d = 0;
 
-            for (int j = 0; j < 4; j++) {
-
+            for (int j = 0; j < spheres_len; j++) {
                 t_sphere = t_list[j];
                 t_d = calculateSphere(p, direction, t_sphere.center, t_sphere.radius);
                 if (t_d > 0) {
@@ -142,14 +140,25 @@ vec3 inter_ray_color(Ray r, Sphere[4] t_list, int upper_seed) {
 
     vec3 final_color = vec3(0, 0, 0);
     if (attenuation.x != 0) {
-        //final_color = ( t_list[first_sphere_i].color * (1-t_list[first_sphere_i].albedo)  +  attenuation * (t_list[first_sphere_i].albedo)) / depth;
-        final_color = attenuation / depth;
-
+        final_color = (t_list[first_sphere_i].color * (1-t_list[first_sphere_i].albedo)  +  attenuation * (t_list[first_sphere_i].albedo)) / depth;
     }
+    else {
+        // background
+        vec3 unit_direction = unit_vector(r.dir);
 
-    //if (final_color.x != 0) {
-    //    final_color /= max_depth;
-    //}
+        float blend_a = 0.9 * (unit_direction.y + 1.0);
+        vec3 white = vec3(1.0, 1.0, 1.0);
+        vec3 blue = vec3(1, 0.2, 0.7);
+        final_color = (1.0 - blend_a) * white + blend_a * blue;
+
+        // ?
+        if (first_sphere_i != -1) {
+            Sphere sphere = t_list[first_sphere_i];
+            if (sphere.is_reflect) {
+                final_color = normalize(final_color + (sphere.albedo * sphere.color));
+            }
+        }
+    }
 
     /// figure trace //
     //if (final_color.x == -1.0) {
@@ -166,18 +175,24 @@ vec3 inter_ray_color(Ray r, Sphere[4] t_list, int upper_seed) {
     //}
     ///
 
-    if (final_color.x == 0) {
-
-        vec3 unit_direction = unit_vector(r.dir);
-
-        float blend_a = 0.9 * (unit_direction.y + 1.0);
-        vec3 white = vec3(1.0, 1.0, 1.0);
-        vec3 blue = vec3(0.2, 0.2, 0.7);
-        final_color = (1.0 - blend_a) * white + blend_a * blue;
-    }
-
     return final_color;
 
+}
+
+mat3 rotationMatrix(float angle, vec3 axis) {
+    float s = sin(angle);
+    float c = cos(angle);
+    float oc = 1.0 - c;
+
+    vec3 a = normalize(axis);
+
+    mat3 result = mat3(
+        oc * a.x * a.x + c, oc * a.x * a.y - a.z * s, oc * a.x * a.z + a.y * s,
+        oc * a.x * a.y + a.z * s, oc * a.y * a.y + c, oc * a.y * a.z - a.x * s,
+        oc * a.x * a.z - a.y * s, oc * a.y * a.z + a.x * s, oc * a.z * a.z + c
+    );
+
+    return result;
 }
 
 
@@ -189,23 +204,32 @@ void main() {
     float y = (float(pixelCoords.y) / float(height) - (1.0 - aspect_ratio) / 2.0) / aspect_ratio;
 
     float small_radius = 0.1;
-    Sphere sphere1 = Sphere(vec3(0.5, 0.52, -0.8), vec3(0.5, 0.5, 0.2), vec3(0.9, 0.9, 0.9), small_radius, true);
+    Sphere sphere1 = Sphere(vec3(0.52, 0.52, -0.8), vec3(0.5, 0.5, 0.2), vec3(0.9, 0.9, 0.9), small_radius, true);
     Sphere sphere2 = Sphere(vec3(0.7, 0.58, -0.8), vec3(0.9, 0.2, 0.3), vec3(0.2, 0.2, 0.2), 0.05, true);
 
-    Sphere sphere3 = Sphere(vec3(0.28, 0.47, -0.8), vec3(0.5, 0.2, 0.7), vec3(0.2, 0.2, 0.2), small_radius, false);
+    Sphere sphere3 = Sphere(vec3(0.3, 0.5, -0.8), vec3(0.5, 0.2, 0.7), vec3(0.2, 0.2, 0.2), small_radius, false);
 
-    float surface_radius = 10000;
-    Sphere sphere4 = Sphere(vec3(0.5, 0.5 - surface_radius - small_radius - 0.03, -1), vec3(0.2, 0.7, 0.3), vec3(0.2, 0.2, 0.2), surface_radius, false);
+    float surface_radius = 100;
+    Sphere sphere4 = Sphere(vec3(0.5, 0.5 - surface_radius - small_radius, -1), vec3(0.2, 0.7, 0.3), vec3(0.2, 0.2, 0.2), surface_radius, false);
 
 
-    Sphere[4]t_list = { sphere1, sphere2, sphere3, sphere4 }; //, 
+    Sphere[4]t_list = { sphere3, sphere1, sphere2,  sphere4 }; //, 
 
+
+
+    // camera rot 
+    float rotation_angle = -5;
+    float angle = radians(rotation_angle); // Convert the rotation angle to radians
+    vec3 axis = vec3(0.0, 0.0, 1.0); // Rotation axis (e.g., around the Z-axis)
+
+    mat3 rotation = rotationMatrix(angle, axis);
 
 
     vec3 temp_dir = vec3(x, y, -1) - camera_center;
+    temp_dir = rotation * temp_dir;
 
 
-    int samples_per_pixel = 300;
+    int samples_per_pixel = 100;
     float sample_side = 0.001;
 
     vec4 sampled_color;
@@ -218,7 +242,7 @@ void main() {
 
         Ray r = createRay(camera_center, sampled_dir);
 
-        sampled_color += vec4(inter_ray_color(r, t_list, i), 0);
+        sampled_color += vec4(inter_ray_color(r, t_list, float(i) + rand_dir), 0);
     }
 
 

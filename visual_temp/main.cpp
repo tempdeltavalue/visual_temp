@@ -64,7 +64,7 @@ int main(int argc, char* argv[])
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 
 
-    float aspect_ratio = 16.0 / 16.0;
+    float aspect_ratio = 16.0 / 9.0;
     int width = 1200;
 
     // Calculate the image height, and ensure that it's at least 1.
@@ -175,6 +175,12 @@ int main(int argc, char* argv[])
     while (!glfwWindowShouldClose(window))
     {
 
+        time_t currentTime;
+        time(&currentTime);
+
+        // Convert it to a float
+        currentTimeFloat = static_cast<float>(currentTime);
+
         //Draw
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glEnable(GL_DEPTH_TEST);
@@ -193,7 +199,7 @@ int main(int argc, char* argv[])
         fragmentShader.setInt("width", width);
         fragmentShader.setVec2("mousePos", glm::vec2(mouseX, mouseY));
         fragmentShader.setVec3("camera_center", camera_center);
-        fragmentShader.setFloat("current_time", currentTime);
+        fragmentShader.setFloat("current_time", currentTimeFloat);
         //fragmentShader.setInt("triangles_len", triangles.size());
 
 

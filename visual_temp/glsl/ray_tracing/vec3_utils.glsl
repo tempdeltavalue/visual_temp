@@ -24,27 +24,9 @@ float rand(vec2 co) {
     return fract(sin(dot(co.xy, vec2(12.9898, 78.233))) * 43758.5453);
 }
 
-vec3 rand_vec3_golden_noise(vec2 seed) {
-    float randX = gold_noise(gl_FragCoord.xy, seed.x);
-    float randY = gold_noise(gl_FragCoord.yx, seed.x);
-    float randZ = gold_noise(gl_FragCoord.yx * 0.5, seed.x); 
-
-    return vec3(randX, randY, randZ);
-}
-
-
-vec3 rand_vec3(vec2 seed) {
-    float randX = rand(gl_FragCoord.xy + seed);
-    float randY = rand(gl_FragCoord.yx + seed);
-    float randZ = rand(gl_FragCoord.xy * 0.5 + seed);
-
-    return vec3(randX, randY, randZ);
-}
-
-
 vec3 random_on_unit_sphere(vec2 seed) {
-    float theta = rand(seed) * 2.0 * 3.14159265359; // Random angle between 0 and 2*pi
-    float phi = rand(seed) * 2.0 * 3.14159265359; // Random angle between 0 and 2*pi
+    float theta = rand(seed - 1) * 2.0 * 3.14159265359; // Random angle between 0 and 2*pi
+    float phi = rand(seed + 1) * 2.0 * 3.14159265359; // Random angle between 0 and 2*pi
 
     float x = cos(theta) * cos(phi);
     float y = sin(phi);
@@ -86,6 +68,9 @@ vec3 random_on_hemisphere2(vec3 N, vec2 seed) {
 
     return randomDirection;
 }
+
+
+
 
 
 vec3 reflect(vec3 v, vec3 n) {
