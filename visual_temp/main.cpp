@@ -4,6 +4,7 @@
 
 #include <glm.hpp>
 #include "gtx/string_cast.hpp"
+#include "gtc/random.hpp"
 
 #include <vector>
 #include "common/Model.h"
@@ -16,9 +17,10 @@
 #include "common/Mesh.h"
 #include "common/Model.h"
 
+#include "common/InputCallbacks.h"
 
-float mouseX = 0.5;
-float mouseY = 0.5;
+
+
 
 
 // https://stackoverflow.com/questions/38172696/should-i-ever-use-a-vec3-inside-of-a-uniform-buffer-or-shader-storage-buffer-o/38172697#38172697
@@ -30,20 +32,21 @@ struct Triangle {
     glm::vec4 texCoords;
 };
 
+// https://stackoverflow.com/questions/38172696/should-i-ever-use-a-vec3-inside-of-a-uniform-buffer-or-shader-storage-buffer-o/38172697#38172697
+struct Sphere {
+    glm::vec4 center;
+    glm::vec4 color;
+    glm::vec4 albedo;
+    glm::vec4 radius; // float
+    glm::vec4 is_reflect; // bool
+    glm::vec4 fuzz; // float
+    glm::vec4 is_dielectric; // bool
+};
 
-
-void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
-{
-    if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS)
-    {
-        double xpos, ypos;
-        glfwGetCursorPos(window, &xpos, &ypos);
-        mouseX = xpos;
-        mouseY = ypos;
-        std::cout << "Cursor Position at (" << xpos << " : " << ypos << std::endl;
-    }
+// compRand3
+glm::vec3 randomVec3(float min, float max) {
+    return glm::vec3(glm::linearRand(min, max), glm::linearRand(min, max), glm::linearRand(min, max));
 }
-
 
 int main(int argc, char* argv[])
 {
@@ -81,6 +84,12 @@ int main(int argc, char* argv[])
     }
 
     glfwSetMouseButtonCallback(window, mouseButtonCallback);
+    glfwSetKeyCallback(window, keyCallback);
+
+
+    glfwSetCursorPosCallback(window, cursorCallback);
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+
 
     glfwMakeContextCurrent(window);
 
@@ -94,7 +103,6 @@ int main(int argc, char* argv[])
 
 
     // Camera
-    glm::vec3 camera_center = glm::vec3(0.5, 0.5, 0);
 
 
     // I need this for fragment shader/////
@@ -158,6 +166,7 @@ int main(int argc, char* argv[])
 
 
 
+
     std::string fragmentShaderPath = "../visual_temp/glsl/ray_tracing/fragment.glsl";
     Shader fragmentShader(GL_FRAGMENT_SHADER, fragmentShaderPath);
     fragmentShader.setInt("height", height);
@@ -171,6 +180,51 @@ int main(int argc, char* argv[])
     //glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(Triangle) * triangles.size(), &triangles[0], GL_DYNAMIC_DRAW);
 
     //std::cout << "HERE " << ourModel.textures_loaded.size() << std::endl;
+
+
+    std::vector<Sphere> spheres;
+    Sphere groundSphere = Sphere();
+    float groundRadius = 10;
+    groundSphere.center = glm::vec4(0.5, 0.5 - groundRadius - 0.1, -1, 0);
+
+    groundSphere.color = glm::vec4(randomVec3(0., 1), 0);
+    groundSphere.albedo = glm::vec4(1, 1, 1, 0);// glm::vec4(randomVec3(0.01, 1), 0);
+    groundSphere.radius = glm::vec4(groundRadius, 0, 0, 0);
+
+    groundSphere.is_reflect = glm::vec4(0, 0, 0, 0);
+    groundSphere.fuzz = glm::vec4(0, 0, 0, 0);
+    groundSphere.is_dielectric = glm::vec4(0, 0, 0, 0);
+
+    int spheresCount = 2;
+
+    for (int i = 0; i < spheresCount; i++) {
+
+        Sphere sphere = Sphere();
+        sphere.center =  glm::vec4(randomVec3(0.4, 0.6), 0);
+        //sphere.center.x -= i * 0.1;
+        sphere.center.z = -0.8;
+        sphere.center.x += (i * 0.2);
+
+        sphere.color = glm::vec4(randomVec3(0., 1), 0);
+        sphere.albedo = glm::vec4(1, 1, 1, 0);// glm::vec4(randomVec3(0.01, 1), 0);
+        sphere.radius = glm::vec4(0.05, 0.05, 0.05, 0);
+
+        sphere.is_reflect = glm::vec4(randomVec3(0., 1), 0);
+
+        sphere.fuzz = glm::vec4(randomVec3(0., 1), 0);
+        sphere.is_dielectric = glm::vec4(1, 1, 1, 1);// glm::vec4(randomVec3(0., 1), 0);
+
+        spheres.push_back(sphere);
+    }
+
+    spheres.push_back(groundSphere);
+
+    spheresCount += 1;
+
+    GLuint spheresSSBO;
+    glGenBuffers(1, &spheresSSBO);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, spheresSSBO);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(Sphere) * spheres.size(), &spheres[0], GL_DYNAMIC_DRAW);
 
     while (!glfwWindowShouldClose(window))
     {
@@ -197,9 +251,13 @@ int main(int argc, char* argv[])
 
         fragmentShader.setInt("height", height);
         fragmentShader.setInt("width", width);
-        fragmentShader.setVec2("mousePos", glm::vec2(mouseX, mouseY));
+        fragmentShader.setVec2("mousePos", glm::vec2(mouseX/width, mouseY/height));
         fragmentShader.setVec3("camera_center", camera_center);
         fragmentShader.setFloat("current_time", currentTimeFloat);
+        fragmentShader.setInt("spheres_count", spheresCount);
+
+
+
         //fragmentShader.setInt("triangles_len", triangles.size());
 
 
