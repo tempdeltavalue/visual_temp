@@ -1,9 +1,11 @@
+
 #include <iostream>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
 #include <glm.hpp>
 #include "gtx/string_cast.hpp"
+#include <gtc/matrix_transform.hpp>
 #include "gtc/random.hpp"
 
 #include <vector>
@@ -19,7 +21,8 @@
 
 #include "common/InputCallbacks.h"
 
-
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include "common/stb_image_write.h"
 
 
 
@@ -44,9 +47,20 @@ struct Sphere {
 };
 
 // compRand3
-glm::vec3 randomVec3(float min, float max) {
-    return glm::vec3(glm::linearRand(min, max), glm::linearRand(min, max), glm::linearRand(min, max));
+
+float rand(glm::vec2 seed) {
+    return glm::fract(glm::sin(glm::dot(seed, glm::vec2(12.9898, 78.233))));
 }
+
+float rand(glm::vec2 seed, float minVal, float maxVal) {
+    //float zeroToOne = 0.5 + 0.5 * rand(seed);
+    return minVal + rand(seed) * (maxVal - minVal);
+}
+
+glm::vec3 randomVec3(glm::vec2 seed, float min, float max) {
+    return glm::vec3(rand(seed, min, max), rand(seed + glm::vec2(1, 1), min, max), rand(seed + glm::vec2(2, 2), min, max));
+}
+
 
 int main(int argc, char* argv[])
 {
@@ -87,8 +101,8 @@ int main(int argc, char* argv[])
     glfwSetKeyCallback(window, keyCallback);
 
 
-    glfwSetCursorPosCallback(window, cursorCallback);
-    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    //glfwSetCursorPosCallback(window, cursorCallback);
+    //glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
 
     glfwMakeContextCurrent(window);
@@ -187,7 +201,9 @@ int main(int argc, char* argv[])
     float groundRadius = 10;
     groundSphere.center = glm::vec4(0.5, 0.5 - groundRadius - 0.1, -1, 0);
 
-    groundSphere.color = glm::vec4(randomVec3(0., 1), 0);
+    glm::vec2 initialSeed2 = glm::vec2(currentTimeFloat, currentTimeFloat / (1 - currentTimeFloat));
+
+    groundSphere.color = glm::vec4(randomVec3(initialSeed2, 0., 1), 0);
     groundSphere.albedo = glm::vec4(1, 1, 1, 0);// glm::vec4(randomVec3(0.01, 1), 0);
     groundSphere.radius = glm::vec4(groundRadius, 0, 0, 0);
 
@@ -195,24 +211,32 @@ int main(int argc, char* argv[])
     groundSphere.fuzz = glm::vec4(0, 0, 0, 0);
     groundSphere.is_dielectric = glm::vec4(0, 0, 0, 0);
 
-    int spheresCount = 2;
+    int spheresCount = 100;
 
     for (int i = 0; i < spheresCount; i++) {
+        time_t currentTime;
+        time(&currentTime);
+
+        // Convert it to a float
+        float currentTimeFloat = static_cast<float>(currentTime) / glm::pow(i + 1, 3);
+
+        glm::vec2 initialSeed = glm::vec2(glm::sqrt(currentTimeFloat),  glm::sqrt(currentTimeFloat));
 
         Sphere sphere = Sphere();
-        sphere.center =  glm::vec4(randomVec3(0.4, 0.6), 0);
-        //sphere.center.x -= i * 0.1;
-        sphere.center.z = -0.8;
-        sphere.center.x += (i * 0.2);
+        sphere.center =  glm::vec4(randomVec3(initialSeed, 0.4, 0.7), 0);
+        sphere.center.z = -rand(initialSeed, 0.8, 0.9);
 
-        sphere.color = glm::vec4(randomVec3(0., 1), 0);
-        sphere.albedo = glm::vec4(1, 1, 1, 0);// glm::vec4(randomVec3(0.01, 1), 0);
-        sphere.radius = glm::vec4(0.05, 0.05, 0.05, 0);
+        sphere.color = glm::vec4(randomVec3(initialSeed, 0., 1), 0);
 
-        sphere.is_reflect = glm::vec4(randomVec3(0., 1), 0);
+        sphere.albedo = glm::vec4(randomVec3(initialSeed, 0.01, 1), 0);
 
-        sphere.fuzz = glm::vec4(randomVec3(0., 1), 0);
-        sphere.is_dielectric = glm::vec4(1, 1, 1, 1);// glm::vec4(randomVec3(0., 1), 0);
+        sphere.radius = glm::vec4(randomVec3(initialSeed, 0.01, 0.05), 0);
+
+        sphere.is_reflect = glm::vec4(randomVec3(initialSeed, 0., 1), 0);
+
+        sphere.fuzz = glm::vec4(randomVec3(initialSeed, 0., 0.1), 0);
+
+        sphere.is_dielectric =  glm::vec4(randomVec3(initialSeed, 0., 1), 0);
 
         spheres.push_back(sphere);
     }
@@ -268,6 +292,15 @@ int main(int argc, char* argv[])
         //glBindTexture(GL_TEXTURE_2D, ourModel.textures_loaded[0].id);
         //glActiveTexture(GL_TEXTURE0);
 
+
+        //save image
+        int width = 800;  // Set this to your window's width
+        int height = 600;  // Set this to your window's height
+        unsigned char* pixels = new unsigned char[3 * width * height]; // RGB image
+
+        glReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, pixels);
+
+        stbi_write_png("output.png", width, height, 3, pixels, width * 3);
 
         
         glDrawArrays(GL_TRIANGLE_FAN, 0, 4);

@@ -55,7 +55,7 @@ struct Sphere {
 
 
 layout(std430, binding = 2) buffer SphereBuffer {
-    Sphere spheres[];
+    Sphere2 spheres[];
 };
 
 
@@ -85,6 +85,7 @@ vec3 rayAt(Ray ray, float t) {
 
 
 vec3 inter_ray_color(Ray r, Sphere[5] t_list, float upper_seed) {
+
     vec3 attenuation = vec3(0, 0, 0);
 
     int first_sphere_i = -1;
@@ -94,13 +95,12 @@ vec3 inter_ray_color(Ray r, Sphere[5] t_list, float upper_seed) {
     float t_d = 0;
     bool is_hit = false;
 
-    for (int i = 0; i < 5; i++) {
+    for (int i = 0; i < spheres_count; i++) {
         if (depth > max_depth || is_hit) {
             break;
         }
 
-        Sphere t_sphere = t_list[i];
-
+        Sphere2 t_sphere = spheres[i];
 
         t_d = calculateSphere(r.orig, r.dir, t_sphere.center.xyz, t_sphere.radius.x);
 
@@ -129,8 +129,8 @@ vec3 inter_ray_color(Ray r, Sphere[5] t_list, float upper_seed) {
             vec3 rand_c = random_on_unit_sphere(seed);
 
 
-            bool is_sphere_dielectric = t_sphere.is_dielectric;// .x > 0.5;
-            bool is_sphere_reflect = t_sphere.is_reflect;// .x > 0.5;
+            bool is_sphere_dielectric = t_sphere.is_dielectric.x > 0.5;
+            bool is_sphere_reflect = t_sphere.is_reflect.x > 0.5;
 
             if (is_sphere_dielectric) {
                 float ir = 0.8; //1.5;
@@ -138,10 +138,13 @@ vec3 inter_ray_color(Ray r, Sphere[5] t_list, float upper_seed) {
 
                 direction = refract(r.dir, N, refraction_ratio); //  r.dir; //
 
+                attenuation += vec3(0, 0, 0);
+
             } else if (is_sphere_reflect) {
                 direction = reflect(r.dir, N);
-                direction += t_sphere.fuzz * rand_c;  //fuzz.x
+                direction += t_sphere.fuzz.x * rand_c;  //fuzz.x
 
+                attenuation += t_sphere.color.xyz * (1 - t_sphere.albedo.xyz);
             }
             else {
 
@@ -150,15 +153,13 @@ vec3 inter_ray_color(Ray r, Sphere[5] t_list, float upper_seed) {
                 }
 
                 direction = N + rand_c;
-                attenuation = t_sphere.color.xyz;
+                attenuation += t_sphere.color.xyz;
             }
-
-
 
             t_d = 0;
 
-            for (int j = 0; j < 5; j++) {
-                t_sphere = t_list[j];
+            for (int j = 0; j < spheres_count; j++) {
+                t_sphere = spheres[j];
                 t_d = calculateSphere(p, direction, t_sphere.center.xyz, t_sphere.radius.x);
                 if (t_d > 0) {
                     r = createRay(p, direction);
@@ -169,45 +170,19 @@ vec3 inter_ray_color(Ray r, Sphere[5] t_list, float upper_seed) {
 
     }
 
-    vec3 final_color = vec3(0, 0, 0);
+    vec3 unit_direction = unit_vector(r.dir);
+
+    float blend_a = 0.9 * (unit_direction.y + 1.0);
+    vec3 white = vec3(1.0, 1.0, 1.0);
+    vec3 blue = vec3(1, 0.4, 0.7);
+    vec3 final_color = (1.0 - blend_a) * white + blend_a * blue;
+
     if (attenuation.x != 0) {
-        Sphere sphere = t_list[first_sphere_i];
-        bool is_sphere_dielectric = sphere.is_dielectric;// .x > 0.5;
-
-        if (is_sphere_dielectric) {
-            final_color = attenuation / depth;
-        }
-        else {
-            final_color = (sphere.color.xyz * (1 - sphere.albedo.xyz) + attenuation * sphere.albedo.xyz) / depth;
-        }
+        final_color = normalize(final_color + attenuation) / depth;
 
     }
-    else {
-        // background
-        vec3 unit_direction = unit_vector(r.dir);
 
-        float blend_a = 0.9 * (unit_direction.y + 1.0);
-        vec3 white = vec3(1.0, 1.0, 1.0);
-        vec3 blue = vec3(1, 0.4, 0.7);
-        final_color = (1.0 - blend_a) * white + blend_a * blue;
-
-        // ?
-        if (first_sphere_i != -1) {
-            Sphere sphere = t_list[first_sphere_i];
-
-            bool is_sphere_dielectric = sphere.is_dielectric;// .x > 0.5;
-            bool is_sphere_reflect = sphere.is_reflect;// .x > 0.5;
-
-            if (is_sphere_reflect) {
-                final_color = normalize(final_color + (sphere.albedo.xyz * sphere.color.xyz));
-            }
-            else if (is_sphere_dielectric) {
-                final_color = normalize(final_color + (sphere.albedo.xyz * sphere.color.xyz));
-            }
-        }
-    }
-
-    /// figure trace //
+    /// figure trace from mesh //
     //if (final_color.x == -1.0) {
     //    for (int i = 0; i < triangles_len; i++) {
     //        if (i % 2 == 0) {
@@ -271,7 +246,7 @@ void main() {
 
 
     float surface_radius = 100;
-    Sphere sphere4 = Sphere(vec3(0.5, 0.5 - surface_radius - small_radius, -1), vec3(0.2, 0.8, 0.2), vec3(0.2, 0.2, 0.2), surface_radius, false, 0, false);
+    Sphere sphere4 = Sphere(vec3(0.5, 0.5 - surface_radius - small_radius, -1), vec3(0.2, 0.8, 0.2), vec3(1, 1, 1), surface_radius, false, 0, false);
 
     Sphere sphere5 = Sphere(vec3(0.6, 0.5, -0.5), vec3(1, 1, 1), vec3(0.2, 0.2, 0.2), small_radius, false, 0, true);
 
@@ -305,7 +280,7 @@ void main() {
     }
 
 
-    float gamma = 1.5;
+    float gamma = 1.2;
     FragColor = sampled_color / samples_per_pixel * gamma;
 
 
