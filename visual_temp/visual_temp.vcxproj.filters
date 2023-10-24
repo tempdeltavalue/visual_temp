@@ -29,9 +29,39 @@
     <ClInclude Include="common\shaders\Shader.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="common\utils\Shadinclude.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="common\Camera.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="common\InputCallbacks.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="common\Mesh.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="common\Model.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="common\utils\stb_image_write.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="common\utils\stb_image.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="glsl\ray_tracing\compute_shape.glsl" />
     <None Include="glsl\ray_tracing\fragment.glsl" />
+    <None Include="glsl\rasterization\fragment.glsl" />
+    <None Include="glsl\rasterization\vertex.glsl" />
+    <None Include="glsl\ray_tracing\figure_trace.glsl" />
+    <None Include="glsl\ray_tracing\vec3_utils.glsl" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="models\space_rocket\diffuse.jpg">
+      <Filter>Resource Files</Filter>
+    </Image>
   </ItemGroup>
 </Project>

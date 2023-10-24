@@ -21,8 +21,10 @@
 
 #include "common/InputCallbacks.h"
 
+
 #define STB_IMAGE_WRITE_IMPLEMENTATION
-#include "common/stb_image_write.h"
+#include "common/utils/stb_image_write.h"
+
 
 
 
@@ -60,6 +62,63 @@ float rand(glm::vec2 seed, float minVal, float maxVal) {
 glm::vec3 randomVec3(glm::vec2 seed, float min, float max) {
     return glm::vec3(rand(seed, min, max), rand(seed + glm::vec2(1, 1), min, max), rand(seed + glm::vec2(2, 2), min, max));
 }
+
+std::vector<Sphere> getFavoriteSpheres() {
+    float small_radius = 0.08;
+    Sphere sphere3 = Sphere();
+    sphere3.center = glm::vec4(0.25, 0.5, -0.8, 0);
+    sphere3.color = glm::vec4(0.5, 0.2, 0.7, 1);
+    sphere3.albedo = glm::vec4(0.2, 0.2, 0.2, 1);
+    sphere3.radius = glm::vec4(small_radius, 1, 1, 1);
+    sphere3.is_reflect = glm::vec4(0, 0, 0, 0);
+    sphere3.fuzz = glm::vec4(0, 0, 0, 0);
+    sphere3.is_dielectric = glm::vec4(0, 0, 0, 0);
+
+    Sphere sphere1 = Sphere();
+    sphere3.center = glm::vec4(0.42, 0.52, -0.8, 0);
+    sphere3.color = glm::vec4(0.5, 0.5, 0.2, 0);
+    sphere3.albedo = glm::vec4(0.9, 0.9, 0.9, 0);
+    sphere3.radius = glm::vec4(small_radius, 1, 1, 1);
+    sphere3.is_reflect = glm::vec4(1, 0, 0, 0);
+    sphere3.fuzz = glm::vec4(0.01, 0, 0, 0);
+    sphere3.is_dielectric = glm::vec4(0, 0, 0, 0);
+
+    Sphere sphere2 = Sphere();
+    sphere3.center = glm::vec4(0.55, 0.58, -0.8, 0);
+    sphere3.color = glm::vec4(0.9, 0.2, 0.3, 0);
+    sphere3.albedo = glm::vec4(0.2, 0.2, 0.2, 0);
+    sphere3.radius = glm::vec4(0.05, 1, 1, 1);
+    sphere3.is_reflect = glm::vec4(1, 0, 0, 0);
+    sphere3.fuzz = glm::vec4(0.3, 0, 0, 0);
+    sphere3.is_dielectric = glm::vec4(0, 0, 0, 0);
+
+    float surface_radius = 100;
+
+    Sphere sphere4 = Sphere();
+    sphere3.center = glm::vec4(0.5, 0.5 - surface_radius - small_radius, -1, 0);
+    sphere3.color = glm::vec4(0.2, 0.8, 0.2, 0);
+    sphere3.albedo = glm::vec4(1, 1, 1, 0);
+    sphere3.radius = glm::vec4(surface_radius, 1, 1, 1);
+    sphere3.is_reflect = glm::vec4(0, 0, 0, 0);
+    sphere3.fuzz = glm::vec4(0, 0, 0, 0);
+    sphere3.is_dielectric = glm::vec4(0, 0, 0, 0);
+
+    Sphere sphere5 = Sphere();
+    sphere3.center = glm::vec4(0.6, 0.5, -0.5, 0);
+    sphere3.color = glm::vec4(1, 1, 1, 0);
+    sphere3.albedo = glm::vec4(0.2, 0.2, 0.2, 0);
+    sphere3.radius = glm::vec4(small_radius, 1, 1, 1);
+    sphere3.is_reflect = glm::vec4(0, 0, 0, 0);
+    sphere3.fuzz = glm::vec4(0, 0, 0, 0);
+    sphere3.is_dielectric = glm::vec4(1, 0, 0, 0);
+
+
+    std::vector<Sphere> spheres =  { sphere5, sphere3, sphere1, sphere2,  sphere4 }; //, 
+
+    return spheres;
+}
+
+
 
 
 int main(int argc, char* argv[])
@@ -196,7 +255,10 @@ int main(int argc, char* argv[])
     //std::cout << "HERE " << ourModel.textures_loaded.size() << std::endl;
 
 
-    std::vector<Sphere> spheres;
+    std::vector<Sphere> spheres;// = getFavoriteSpheres();
+    std::cout << "tempp " << spheres.size() << std::endl;
+    int spheresCount = 5;
+
     Sphere groundSphere = Sphere();
     float groundRadius = 10;
     groundSphere.center = glm::vec4(0.5, 0.5 - groundRadius - 0.1, -1, 0);
@@ -211,32 +273,42 @@ int main(int argc, char* argv[])
     groundSphere.fuzz = glm::vec4(0, 0, 0, 0);
     groundSphere.is_dielectric = glm::vec4(0, 0, 0, 0);
 
-    int spheresCount = 100;
 
     for (int i = 0; i < spheresCount; i++) {
         time_t currentTime;
         time(&currentTime);
 
         // Convert it to a float
-        float currentTimeFloat = static_cast<float>(currentTime) / glm::pow(i + 1, 3);
+        float currentTimeFloat = static_cast<float>(currentTime);
 
-        glm::vec2 initialSeed = glm::vec2(glm::sqrt(currentTimeFloat),  glm::sqrt(currentTimeFloat));
+        glm::vec2 initialSeed = glm::vec2(glm::pow(i + 1, 3), glm::pow(i + 1, 4));
 
         Sphere sphere = Sphere();
         sphere.center =  glm::vec4(randomVec3(initialSeed, 0.4, 0.7), 0);
-        sphere.center.z = -rand(initialSeed, 0.8, 0.9);
+        //sphere.center.y = 0.5;
+
+        initialSeed += glm::vec2(2, 2);
+
+        sphere.center.z = -rand(initialSeed, 0.7, 0.9);
+        initialSeed += glm::vec2(2, 2);
 
         sphere.color = glm::vec4(randomVec3(initialSeed, 0., 1), 0);
+        initialSeed += glm::vec2(2, 2);
 
         sphere.albedo = glm::vec4(randomVec3(initialSeed, 0.01, 1), 0);
+        initialSeed += glm::vec2(2, 2);
 
         sphere.radius = glm::vec4(randomVec3(initialSeed, 0.01, 0.05), 0);
+        initialSeed += glm::vec2(2, 2);
 
         sphere.is_reflect = glm::vec4(randomVec3(initialSeed, 0., 1), 0);
+        initialSeed += glm::vec2(2, 2);
 
         sphere.fuzz = glm::vec4(randomVec3(initialSeed, 0., 0.1), 0);
+        initialSeed += glm::vec2(2, 2);
 
         sphere.is_dielectric =  glm::vec4(randomVec3(initialSeed, 0., 1), 0);
+        initialSeed += glm::vec2(2, 2);
 
         spheres.push_back(sphere);
     }
@@ -293,17 +365,17 @@ int main(int argc, char* argv[])
         //glActiveTexture(GL_TEXTURE0);
 
 
-        //save image
-        int width = 800;  // Set this to your window's width
-        int height = 600;  // Set this to your window's height
-        unsigned char* pixels = new unsigned char[3 * width * height]; // RGB image
-
-        glReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, pixels);
-
-        stbi_write_png("output.png", width, height, 3, pixels, width * 3);
 
         
         glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+
+        ////save image
+        //unsigned char* pixels = new unsigned char[3 * width * height]; // RGB image
+
+        //glReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, pixels);
+
+        //stbi_write_jpg("output.jpg", width, height, 3, pixels, width * 3);
+        //break;
 
         glfwSwapBuffers(window);
         glfwPollEvents();

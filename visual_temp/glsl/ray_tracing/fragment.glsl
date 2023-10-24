@@ -84,7 +84,7 @@ vec3 rayAt(Ray ray, float t) {
 // GLSL doesn't support recursion 
 
 
-vec3 inter_ray_color(Ray r, Sphere[5] t_list, float upper_seed) {
+vec3 inter_ray_color(Ray r, float upper_seed) {
 
     vec3 attenuation = vec3(0, 0, 0);
 
@@ -238,20 +238,20 @@ void main() {
     float x = float(pixelCoords.x) / float(width);
     float y = (float(pixelCoords.y) / float(height) - (1.0 - aspect_ratio) / 2.0) / aspect_ratio;
 
-    float small_radius = 0.08;
-    Sphere sphere3 = Sphere(vec3(0.25, 0.5, -0.8), vec3(0.5, 0.2, 0.7), vec3(0.2, 0.2, 0.2), small_radius, false, 0, false);
+    //float small_radius = 0.08;
+    //Sphere sphere3 = Sphere(vec3(0.25, 0.5, -0.8), vec3(0.5, 0.2, 0.7), vec3(0.2, 0.2, 0.2), small_radius, false, 0, false);
 
-    Sphere sphere1 = Sphere(vec3(0.42, 0.52, -0.8), vec3(0.5, 0.5, 0.2), vec3(0.9, 0.9, 0.9), small_radius, true, 0.01, false);
-    Sphere sphere2 = Sphere(vec3(0.55, 0.58, -0.8), vec3(0.9, 0.2, 0.3), vec3(0.2, 0.2, 0.2), 0.05, true, 0.3, false);
-
-
-    float surface_radius = 100;
-    Sphere sphere4 = Sphere(vec3(0.5, 0.5 - surface_radius - small_radius, -1), vec3(0.2, 0.8, 0.2), vec3(1, 1, 1), surface_radius, false, 0, false);
-
-    Sphere sphere5 = Sphere(vec3(0.6, 0.5, -0.5), vec3(1, 1, 1), vec3(0.2, 0.2, 0.2), small_radius, false, 0, true);
+    //Sphere sphere1 = Sphere(vec3(0.42, 0.52, -0.8), vec3(0.5, 0.5, 0.2), vec3(0.9, 0.9, 0.9), small_radius, true, 0.01, false);
+    //Sphere sphere2 = Sphere(vec3(0.55, 0.58, -0.8), vec3(0.9, 0.2, 0.3), vec3(0.2, 0.2, 0.2), 0.05, true, 0.3, false);
 
 
-    Sphere[5]t_list = { sphere5, sphere3, sphere1, sphere2,  sphere4 }; //, 
+    //float surface_radius = 100;
+    //Sphere sphere4 = Sphere(vec3(0.5, 0.5 - surface_radius - small_radius, -1), vec3(0.2, 0.8, 0.2), vec3(1, 1, 1), surface_radius, false, 0, false);
+
+    //Sphere sphere5 = Sphere(vec3(0.6, 0.5, -0.5), vec3(1, 1, 1), vec3(0.2, 0.2, 0.2), small_radius, false, 0, true);
+
+
+    //Sphere[5]t_list = { sphere5, sphere3, sphere1, sphere2,  sphere4 }; //, 
 
 
 
@@ -276,7 +276,7 @@ void main() {
 
         Ray r = createRay(camera_center, sampled_dir);
 
-        sampled_color += vec4(inter_ray_color(r, t_list, float(i) + rand_dir), 0);
+        sampled_color += vec4(inter_ray_color(r, float(i) + rand_dir), 0);
     }
 
 
