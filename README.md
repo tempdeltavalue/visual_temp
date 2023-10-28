@@ -1,7 +1,9 @@
-# visual_temp
 ray tracing, opengl, glsl
 
-![Screenshot 2023-10-20 215359](https://github.com/tempdeltavalue/visual_temp/assets/36921178/6f60db52-2e2d-4ee6-868e-aa2df4376562)
+[Bubbles](https://www.youtube.com/watch?v=YW2Pq8YZtE8)
+
+![Screenshot 2023-10-28 165456](https://github.com/tempdeltavalue/visual_temp/assets/36921178/14e47d9a-7ca2-4993-9376-507aaffdbe6f)
+
 
 ![temp11](https://github.com/tempdeltavalue/visual_temp/assets/36921178/339ccfee-97b3-43ae-b761-fc4f519f6f15)
 

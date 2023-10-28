@@ -58,11 +58,13 @@ bool rayTriangleIntersect(
     return true; // This ray hits the triangle
 }
 
-float calculateSphere(vec3 orig, vec3 dir, vec3 sphere_coords, float radius) {
-    vec3 oc = orig - sphere_coords;
-    float a = dot(dir, dir);
-    float half_b = dot(oc, dir);
-    float c = dot(oc, oc) - radius * radius;
+float calculateSphere(Ray r, Sphere sphere) {
+    vec4 center = sphere.is_moving.x > 0.5 ? getCenterAtTime(sphere, r.time) : sphere.center;
+
+    vec3 oc = r.orig - center.xyz;
+    float a = dot(r.dir, r.dir);
+    float half_b = dot(oc, r.dir);
+    float c = dot(oc, oc) - sphere.radius.x * sphere.radius.x;
     float discriminant = half_b * half_b - a * c;
        
     if (discriminant <= 0.0) {

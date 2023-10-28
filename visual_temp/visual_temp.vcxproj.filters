@@ -50,6 +50,9 @@
     <ClInclude Include="common\utils\stb_image.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="common\Objects.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="glsl\ray_tracing\compute_shape.glsl" />

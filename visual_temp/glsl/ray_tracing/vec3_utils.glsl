@@ -75,9 +75,6 @@ vec3 random_on_hemisphere2(vec3 N, vec2 seed) {
 }
 
 
-
-
-
 vec3 reflect(vec3 v, vec3 n) {
     return v - 2 * dot(v, n) * n;
 }
