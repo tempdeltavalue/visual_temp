@@ -26,10 +26,11 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "common/utils/stb_image_write.h"
 
+
 // compRand3
 
 
-int main(int argc, char* argv[])
+int main2(int argc, char* argv[])
 {
 
     time_t currentTime;
@@ -159,7 +160,7 @@ int main(int argc, char* argv[])
 
         fragmentShader.setInt("height", height);
         fragmentShader.setInt("width", width);
-        fragmentShader.setVec2("mousePos", glm::vec2(mouseX/width, mouseY/height));
+        fragmentShader.setVec2("mousePos", glm::vec2(mouseX / width, mouseY / height));
         fragmentShader.setVec3("camera_center", camera_center);
         fragmentShader.setFloat("current_time", currentTimeFloat);
         fragmentShader.setInt("spheres_count", spheresCount);
@@ -178,7 +179,6 @@ int main(int argc, char* argv[])
 
 
 
-        
         glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 
         ////save image

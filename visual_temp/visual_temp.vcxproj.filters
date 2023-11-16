@@ -24,6 +24,9 @@
     <ClCompile Include="common\shaders\Shader.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="cuda_interop.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="common\shaders\Shader.h">
@@ -66,5 +69,8 @@
     <Image Include="models\space_rocket\diffuse.jpg">
       <Filter>Resource Files</Filter>
     </Image>
+  </ItemGroup>
+  <ItemGroup>
+    <CudaCompile Include="red_square.cu" />
   </ItemGroup>
 </Project>
