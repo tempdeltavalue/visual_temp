@@ -1,4 +1,6 @@
 #include <stdio.h>
+#include <iostream>
+
 #include "device_launch_parameters.h"
 #include <cuda_runtime.h>
 #include <GLFW/glfw3.h>
@@ -19,6 +21,17 @@ const int WINDOW_HEIGHT = 500;
 const int U_FIELD = 0;
 const int V_FIELD = 1;
 const int S_FIELD = 2;
+
+
+#define CUDA_CHECK_ERROR() \
+    do { \
+        cudaError_t err = cudaGetLastError(); \
+        if (cudaSuccess != err) { \
+            std::cerr << "CUDA error: " << cudaGetErrorString(err) << " at line " << __LINE__ << std::endl; \
+            exit(EXIT_FAILURE); \
+        } \
+    } while (0)
+
 
 float* normalizeArray(const float* array, int size) {
     // Find the minimum and maximum values in the array
@@ -113,38 +126,56 @@ __global__ void solve_incompressibility(float* u, float* v, float* d_p, float* s
 
 // ADVECTION
 
-__device__ void d_sampleField(int x, int y, int h, int fieldType, float* field, float* result) {
+__device__ float d_sampleField(float x, float y, float h, int fieldType, float* field) {
 
-    float h1 = 1.0 / h;
-    float h2 = 0.5 * h;
+    float grid_sclr = 1.0 / h;
+    float half_cell = 0.5 * h;
 
     float dx = 0.0;
     float dy = 0.0;
 
-
     switch (fieldType) {
-    case U_FIELD: dy = h2; break;
-    case V_FIELD: dx = h2; break;
-    case S_FIELD: dx = h2; dy = h2; break;
+    case U_FIELD: dy = half_cell; break;
+    case V_FIELD: dx = half_cell; break;
+    case S_FIELD: dx = half_cell; dy = half_cell; break;
     }
 
-    int x0 = min(max(static_cast<int>((x - dx) * h1), 0), DIM - 1);
-    float tx = ((x - dx) - x0 * h) * h1;
-    int x1 = min(x0 + 1, DIM - 1);
 
-    int y0 = min(max(static_cast<int>((y - dy) * h1), 0), DIM - 1);
-    float ty = ((y - dy) - y0 * h) * h1;
-    int y1 = min(y0 + 1, DIM - 1);
+    int N = DIM - 1;
+
+    float offset_x = x - dx;
+    int x0 = max(static_cast<int>(offset_x * grid_sclr), 0);
+    x0 = min(x0, N);
+    int x1 = min(x0 + 1, N);
+    float tx = (offset_x - x0 * h) * grid_sclr;
+
+    float offset_y = y - dy;
+    int y0 = max(static_cast<int>(offset_y * grid_sclr), 0);
+    y0 = min(y0, N);
+    int y1 = min(y0 + 1, N);
+    float ty = (offset_y - y0 * h) * grid_sclr;
+
 
     float sx = 1.0 - tx;
     float sy = 1.0 - ty;
+    
+    //printf(" %d %d %d %d \n", x0, x1, y0, y1);
 
-    int idx = x * DIM + y;
-    result[idx] = sx * sy * field[x0 * DIM + y0] + tx * sy * field[x1 * DIM + y0] + tx * ty * field[x1 * DIM + y1] + sx * ty * field[x0 * DIM + y1];
+    int sidx = x0 * DIM + y0;
+    int l_idx = x1 * DIM + y0;
+    int b_idx = x1 * DIM + y1;
+    int u_idx = x0 * DIM + y1;
+
+    //printf("%d %d %d %d \n", sidx, l_idx, b_idx, u_idx);
+
+    float adv_value = sx * sy * field[sidx] + tx * sy * field[l_idx] + tx * ty * field[b_idx] + sx * ty * field[u_idx];
+
+    return adv_value;
+
 }
 
 
-__global__ void advect_velocity(float* u, float* v, float* p, float* s, void (*p_sampleField)(int x, int y, int h, int fieldType, float* field, float* result)) {
+__global__ void advect_velocity(float* u, float* v, float* p, float* s, float* res_u, float* res_v) {
     int threadId = blockIdx.x * blockDim.x + threadIdx.x;
 
     int xIndex = threadId % DIM;
@@ -157,25 +188,46 @@ __global__ void advect_velocity(float* u, float* v, float* p, float* s, void (*p
     int rightIdx = (xIndex < DIM - 1) ? (yIndex * DIM + xIndex + 1) : -1;
 
 
-    int u_h = 20; //horizontal resolution of sim
-    int v_h = 20; //vertical resolution of sim
+    float h = 0.01; //horizontal resolution of sim
+    float half_cell = h * 0.5;
+
     float dt = 1.f / 60.f; // time step of sim
-    // U component
 
+
+    //// U component
     if (s[idx] != 0 && s[leftIdx] != 0) {
-        int x = xIndex * u_h;
-        int y = yIndex * v_h;
+        float x = xIndex * h;
+        float y = yIndex * h + half_cell;
 
-        float average_v = (v[leftIdx] + v[idx] + v[(xIndex - 1) * DIM + yIndex + 1] + v[bottomIdx]) / 4.f;
+        //printf("tsssh %d %d __ %f %f \n", xIndex, yIndex, x, y);
+
+        float average_v = (v[leftIdx] + v[idx] + v[upIdx] + v[bottomIdx]) / 4.f;
 
         x = x - dt * u[idx];
         y = y - dt * average_v;
+        //printf("prev x, y %f %f \n", x, y);
 
-        float* result;
-        p_sampleField(x, y, u_h, 0, u, result);
-        printf("sampled field %f", result);
-
+        float result = d_sampleField(x, y, h, 0, u);
+        
+        res_u[idx] = result; //*result;
     }
+
+    // V component
+    if ( s[idx] != 0.0 &&  s[bottomIdx] != 0.0) {
+        float x = xIndex * h + half_cell;
+        float y = yIndex * h;
+
+        float average_u = (u[leftIdx] + u[idx] + u[upIdx] + u[bottomIdx]) / 4.f;
+
+        x = x - dt * average_u;
+        y = y - dt * v[idx];
+        float result = d_sampleField(x, y, h, 1, v);
+
+        res_v[idx] = result;
+    }
+
+    //printf("VVVVV");
+
 }
 
 
@@ -240,22 +292,29 @@ int main(int argc, char** argv) {
             }
 
             if (j == 1) {
-               h_u[curr_i] = 200.f;
+               h_u[curr_i] = 2.f;
             }
         }
     }
 
 
     float* d_u;
+    float* d_res_u;
+
     float* d_v;
+    float* d_res_v;
+
     float* d_p;
     float* d_s;
 
     cudaMalloc(&d_u, TOTAL_SIZE * sizeof(float));
+    cudaMalloc(&d_res_u, TOTAL_SIZE * sizeof(float));
+
     cudaMalloc(&d_v, TOTAL_SIZE * sizeof(float));
+    cudaMalloc(&d_res_v, TOTAL_SIZE * sizeof(float));
+
     cudaMalloc(&d_p, TOTAL_SIZE * sizeof(float));
     cudaMalloc(&d_s, TOTAL_SIZE * sizeof(float));
-
 
     cudaMemcpy(d_u, h_u.data(), TOTAL_SIZE * sizeof(float), cudaMemcpyHostToDevice);
     cudaMemcpy(d_v, h_v.data(), TOTAL_SIZE * sizeof(float), cudaMemcpyHostToDevice);
@@ -263,8 +322,8 @@ int main(int argc, char** argv) {
 
 
     // Define a function pointer to the device function
-    void (*sampleFieldFuncPtr)(int x, int y, int h, int fieldType, float* field, float* result); // h, fieldType, field, result
-    cudaMemcpyFromSymbol(&sampleFieldFuncPtr, d_sampleField, sizeof(void*));
+    //void (*sampleFieldFuncPtr)(int x, int y, int h, int fieldType, float* field, float* result); // h, fieldType, field, result
+    //cudaMemcpyFromSymbol(&sampleFieldFuncPtr, d_sampleField, sizeof(void*));
 
     int threadsPerBlock = 256;
     int blocksPerGrid = (TOTAL_SIZE + threadsPerBlock - 1) / threadsPerBlock;
@@ -275,14 +334,16 @@ int main(int argc, char** argv) {
         float time = static_cast<float>(glfwGetTime());
 
         solve_incompressibility << <blocksPerGrid, threadsPerBlock >> > (d_u, d_v, d_p, d_s);
+        CUDA_CHECK_ERROR();
 
-        //advect_velocity << <blocksPerGrid, threadsPerBlock >> > (d_u, d_v, d_p, d_s, sampleFieldFuncPtr);
+        advect_velocity << <blocksPerGrid, threadsPerBlock >> > (d_u, d_v, d_p, d_s, d_res_u, d_res_v);
+        CUDA_CHECK_ERROR();
 
         float* viz_h_v = new float[TOTAL_SIZE];
-        cudaMemcpy(viz_h_v, d_v, TOTAL_SIZE * sizeof(float), cudaMemcpyDeviceToHost);
+        cudaMemcpy(viz_h_v, d_res_v, TOTAL_SIZE * sizeof(float), cudaMemcpyDeviceToHost);
 
         float* viz_h_u = new float[TOTAL_SIZE];
-        cudaMemcpy(viz_h_u, d_u, TOTAL_SIZE * sizeof(float), cudaMemcpyDeviceToHost);
+        cudaMemcpy(viz_h_u, d_res_u, TOTAL_SIZE * sizeof(float), cudaMemcpyDeviceToHost);
 
         //float* norm_h_v = normalizeArray(viz_h_v, TOTAL_SIZE);
         //float* norm_h_u = normalizeArray(viz_h_u, TOTAL_SIZE);
