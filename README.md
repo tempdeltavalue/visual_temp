@@ -1,6 +1,6 @@
 ray tracing, opengl, glsl
 
-[Bubbles](https://www.youtube.com/watch?v=YW2Pq8YZtE8)
+![temm2](https://github.com/tempdeltavalue/visual_temp/assets/36921178/9162dd31-b48d-43b2-9a29-aad80e8ea557)
 
 ![output](https://github.com/tempdeltavalue/visual_temp/assets/36921178/f05128d4-e176-4c26-9104-eebf08349b8a)
 
